@@ -98,8 +98,8 @@ enrolled_opt(vc,div).
 enrolled_opt(vc,choir).
 enrolled_opt(vc,creatures).
 enrolled_opt(yd,runes).
-enrolled_opt(yd,arith).
-enrolled_opt(yd,choir).
+enrolled_opt(yd,creatures).
+enrolled_opt(yd,app).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -129,7 +129,7 @@ takesAllOptions(SN,OptCourses):-setof(CN,takesOption(SN,CN),OptCourses).
 
 studentAndSID(House,SIDs):-setof(SID-SN,student(SID,SN,House),SIDs).
 
-studentInHouse(House,Students):-
+studentsInHouse(House,Students):-
     studentAndSID(House,SIDs),
     findall(SN,member(_-SN,SIDs),Students).
 
@@ -139,46 +139,33 @@ course(SCN,CN):-optCourse(SCN,CN,_);compCourse(SCN,CN,_).
 
 takesComp(SN,CN):-student(SID,SN,_),enrolled(SID,SCN),compCourse(SCN,CN,_).
 
-snSameHouseAndCourse(SCN,Housename,Students):-
-    studentInHouse(Housename,Stu),
-    compCourse(SCN,CN,_),
-    setof(SN,(member(SN,Stu),takesComp(SN,CN)),Students).
+takesCourse(SN,CN):-takesComp(SN,CN);takesOption(SN,CN).
 
 snSameHouseAndCourse(SCN,Housename,Students):-
     studentInHouse(Housename,Stu),
-    optCourse(SCN,CN,_),
-    setof(SN,(member(SN,Stu),takesOption(SN,CN)),Students).
+    course(SCN,CN),
+    (setof(SN,(member(SN,Stu),takesCourse(SN,CN)),Students)
+     ;
+     (\+setof(SN,(member(SN,Stu),takesCourse(SN,CN)),Students),
+      Students = [])).
+%if no student in this house takes this course, give it empty list
 
 studentsG(SCN,CN,GList):-
     course(SCN,CN),
-    (snSameHouseAndCourse(SCN,'gryffindor',GList)
-     ;
-     \+snSameHouseAndCourse(SCN,'gryffindor',GList),GList=[]
-    ).
+    snSameHouseAndCourse(SCN,'gryffindor',GList).
 
 studentsH(SCN,CN,HList):-
     course(SCN,CN),
-    (snSameHouseAndCourse(SCN,'hufflepuff',HList)
-     ;
-     \+snSameHouseAndCourse(SCN,'hufflepuff',HList),
-     HList=[]
-    ).   % I am pretty sure this looks ugly...
+    snSameHouseAndCourse(SCN,'hufflepuff',HList).
 
-studentsR(SCN,CN,RList):
-    -course(SCN,CN),
-    (snSameHouseAndCourse(SCN,'ravenclaw',RList)
-     ;
-     \+snSameHouseAndCourse(SCN,'ravenclaw',RList),
-     RList=[]
-    ).
-
+studentsR(SCN,CN,RList):-
+    course(SCN,CN),
+    snSameHouseAndCourse(SCN,'ravenclaw',RList).
+    
 studentsS(SCN,CN,SList):-
     course(SCN,CN),
-    (snSameHouseAndCourse(SCN,'slytherin',SList)
-     ;
-     \+snSameHouseAndCourse(SCN,'slytherin',SList),SList=[]
-    ).
-
+    snSameHouseAndCourse(SCN,'slytherin',SList).
+   
 studentsOnCourse(SCN,CN,StudentsByHouse):-
     studentsG(SCN,CN,Glist),
     studentsH(SCN,CN,Hlist),
